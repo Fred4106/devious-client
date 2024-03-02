@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Owain van Brakel <https://github.com/Owain94>
+ * Copyright (c) 2019, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,39 +22,49 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package net.unethicalite.api.events;
 
-rootProject.name = "unethicalite"
+import lombok.Data;
 
-plugins {
-    id("com.gradle.enterprise").version("3.0")
-}
+@Data
+public class SkillMultiInterface
+{
+	private final String[] ops;
+	private int requestedOp = -1;
+	public int getRequestedOp()
+	{
+		return requestedOp;
+	}
 
-gradleEnterprise {
-    buildScan {
-        termsOfServiceUrl = "https://gradle.com/terms-of-service"
-        termsOfServiceAgree = System.getenv("SCAN_TOS_ACCEPTED")?: "no"
-    }
-}
-include(":cache")
-include(":deobfuscator")
-include(":http-api")
-include(":injected-client")
-include(":injection-annotations")
-include(":runelite-api")
-include(":runelite-client")
-include(":runelite-jshell")
-include(":runelite-mixins")
-include(":runescape-api")
-include(":runescape-client")
-include(":runelite-devkit")
-include(":wiki-scraper")
+	public int getOptionCount()
+	{
+		return ops.length;
+	}
 
-for (project in rootProject.children) {
-    project.apply {
-        projectDir = file(name)
-        buildFileName = "$name.gradle.kts"
+	public boolean free()
+	{
+		return requestedOp == -1;
+	}
 
-        require(projectDir.isDirectory) { "Project '${project.path} must have a $projectDir directory" }
-        require(buildFile.isFile) { "Project '${project.path} must have a $buildFile build script" }
-    }
+	public void requestOption(int i)
+	{
+		if (free() && indexInRange(i))
+		{
+			requestedOp = i;
+		}
+	}
+
+	public String getOption(int i)
+	{
+		if (indexInRange(i))
+		{
+			return ops[i];
+		}
+		return "";
+	}
+
+	private boolean indexInRange(int i)
+	{
+		return i >= 0 && i < ops.length;
+	}
 }
