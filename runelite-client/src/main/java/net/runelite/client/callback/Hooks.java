@@ -45,7 +45,10 @@ import net.runelite.api.Client;
 import net.runelite.api.MainBufferProvider;
 import net.runelite.api.Renderable;
 import net.runelite.api.Skill;
+import net.runelite.api.VarClientInt;
 import net.runelite.api.events.Draw;
+import net.runelite.api.widgets.WidgetID;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.api.worldmap.WorldMapRenderer;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.FakeXpDrop;
@@ -74,6 +77,7 @@ import net.runelite.client.util.DeferredEventBus;
 import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.OSType;
 import net.runelite.client.util.RSTimeUnit;
+import net.unethicalite.api.events.SkillMultiInterface;
 
 /**
  * This class contains field required for mixins and runelite hooks to work.
@@ -568,27 +572,86 @@ public class Hooks implements Callbacks
 			log.error("Error during overlay rendering", ex);
 		}
 	}
-
+	private String skill_options_string = null;
+	private static List<String> callbackNames = List.of("onTopLevelSwitch", "SkillMulti_Start", "SkillMulti_End");;
 	@Subscribe
 	public void onScriptCallbackEvent(ScriptCallbackEvent scriptCallbackEvent)
 	{
-		if (!scriptCallbackEvent.getEventName().equals("fakeXpDrop"))
+		String eventName = scriptCallbackEvent.getEventName();
+		boolean modified = false;
+		if (callbackNames.stream().anyMatch(s -> s.equalsIgnoreCase(eventName)))
 		{
-			return;
+			log.info("script callback: \"{}\"; [Strings={}, Ints={}]", eventName, client.getStringStackSize(), client.getIntStackSize());
+			for (int i = 0; i < client.getStringStackSize(); i++)
+			{
+				log.info("\rstrStack[{}] = \"{}\"", i, client.getStringStack()[client.getStringStackSize() - 1 - i]);
+			}
+			for (int i = 0; i < client.getIntStackSize(); i++)
+			{
+				log.info("\tintStack[{}] = {}", i, client.getIntStack()[client.getIntStackSize() - 1 - i]);
+			}
+		}
+		if (eventName.equals("fakeXpDrop"))
+		{
+
+			final int[] intStack = client.getIntStack();
+			final int intStackSize = client.getIntStackSize();
+
+			final int statId = intStack[intStackSize - 2];
+			final int xp = intStack[intStackSize - 1];
+
+			Skill skill = Skill.values()[statId];
+			FakeXpDrop fakeXpDrop = new FakeXpDrop(
+				skill,
+				xp
+			);
+			eventBus.post(fakeXpDrop);
+		}
+		else if(eventName.startsWith("SkillMulti_"))
+		{
+			if (eventName.equals("SkillMulti_Start"))
+			{
+				skill_options_string = client.getStringStack()[client.getStringStackSize()-1];
+			}
+			else if (scriptCallbackEvent.getEventName().equals("SkillMulti_End"))
+			{
+				client.getIntStack()[client.getIntStackSize() - 1] = 0;
+				String[] ops = skill_options_string.split("\\|");
+				for (int i = 0; i < ops.length; i++)
+				{
+					log.info("Option[{}] = \"{}\"", i, ops[i]);
+				}
+				SkillMultiInterface event = new SkillMultiInterface(ops);
+				eventBus.post(event);
+				if (!event.free())
+				{
+					client.getIntStack()[client.getIntStackSize() - 1] = WidgetInfo.PACK(WidgetID.MULTISKILL_MENU_GROUP_ID, 14 + event.getRequestedOp());
+					modified = true;
+				}
+				skill_options_string = null;
+			}
+		}
+		else if (eventName.equals("onTopLevelSwitch"))
+		{
+			if(client.getIntStack()[client.getIntStackSize() - 1 - 1] == 6)
+			{
+				client.getIntStack()[client.getIntStackSize() - 1 - 1] = client.getVarcIntValue(VarClientInt.INVENTORY_TAB);// client.getVarcIntValue(client.getVarcIntValue(VarClientInt.INVENTORY_TAB));
+				modified = true;
+			}
 		}
 
-		final int[] intStack = client.getIntStack();
-		final int intStackSize = client.getIntStackSize();
-
-		final int statId = intStack[intStackSize - 2];
-		final int xp = intStack[intStackSize - 1];
-
-		Skill skill = Skill.values()[statId];
-		FakeXpDrop fakeXpDrop = new FakeXpDrop(
-			skill,
-			xp
-		);
-		eventBus.post(fakeXpDrop);
+		if(modified) {
+			log.info("after script callback: \"{}\"; [Strings={}, Ints={}]", eventName, client.getStringStackSize(), client.getIntStackSize());
+			for (int i = 0; i < client.getStringStackSize(); i++)
+			{
+				log.info("\rstrStack[{}] = \"{}\"", i, client.getStringStack()[client.getStringStackSize() - 1 - i]);
+			}
+			for (int i = 0; i < client.getIntStackSize(); i++)
+			{
+				log.info("\tintStack[{}] = {}", i, client.getIntStack()[client.getIntStackSize() - 1 - i]);
+			}
+		}
+		modified = false;
 	}
 
 	public void registerRenderableDrawListener(RenderableDrawListener listener)

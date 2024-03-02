@@ -84,6 +84,7 @@ public class ScriptInspector extends DevToolsFrame
 	private int lastTick;
 	private Set<Integer> blacklist;
 	private Set<Integer> highlights;
+	private boolean paused;
 	private final JList jList;
 	private final DefaultListModel listModel;
 	private ListState state = ListState.BLACKLIST;
@@ -185,8 +186,17 @@ public class ScriptInspector extends DevToolsFrame
 			tracker.removeAll();
 			tracker.revalidate();
 		});
-
 		bottomLeftRow.add(clearBtn);
+
+		final JButton pauseBtn = new JButton("Pause");
+		pauseBtn.addActionListener(e ->
+		{
+			paused = !paused;
+			pauseBtn.setText((paused) ? "Resume" : "Pause");
+		});
+
+		bottomLeftRow.add(pauseBtn);
+
 		leftSide.add(bottomLeftRow, BorderLayout.SOUTH);
 		add(leftSide, BorderLayout.CENTER);
 
@@ -224,6 +234,8 @@ public class ScriptInspector extends DevToolsFrame
 
 		final JPanel rightSide = new JPanel();
 		rightSide.setLayout(new BorderLayout());
+
+		paused = true;
 
 		listModel = new DefaultListModel();
 		changeState(ListState.BLACKLIST);
@@ -280,7 +292,10 @@ public class ScriptInspector extends DevToolsFrame
 
 		if (currentNode == null)
 		{
-			currentNode = newNode;
+			if(!paused)
+			{
+				currentNode = newNode;
+			}
 		}
 		else
 		{
@@ -311,7 +326,9 @@ public class ScriptInspector extends DevToolsFrame
 	{
 		if (currentNode == null || currentNode.getScriptId() != event.getScriptId())
 		{
-			log.warn("a script was post-fired that was never pre-fired. Script id: " + event.getScriptId());
+			if(!paused) {
+				log.warn("a script was post-fired that was never pre-fired. Script id: " + event.getScriptId());
+			}
 			return;
 		}
 
