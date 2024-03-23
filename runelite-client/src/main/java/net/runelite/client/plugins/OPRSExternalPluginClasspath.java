@@ -33,6 +33,7 @@ class OPRSExternalPluginClasspath extends DevelopmentPluginClasspath
 
 	OPRSExternalPluginClasspath()
 	{
+		addClassesDirectories("build/classes/scala/main");
 		addJarsDirectories(GRADLE_DEPS_PATH);
 	}
 }
