@@ -5,7 +5,7 @@ import net.runelite.api.Client
 import net.runelite.api.events.{ScriptCallbackEvent, ScriptPostFired, ScriptPreFired}
 import net.runelite.api.widgets.Widget
 import net.runelite.client.callback.ClientThread
-import net.runelite.client.eventbus.EventBus
+import net.runelite.client.eventbus.{EventBus, Subscribe}
 import net.runelite.client.plugins.{Plugin, PluginDescriptor}
 import net.runelite.client.ui.overlay.OverlayManager
 import org.slf4j.{Logger, LoggerFactory}
@@ -20,7 +20,7 @@ import scala.reflect.{ClassTag, TypeTest, Typeable}
   tags = Array("develop", "debug", "script", "inspect", "cs2", "rs2asm")
 )
 class ScriptInspector() extends Plugin {
-  private val log: Logger = LoggerFactory.getLogger(classOf[ScriptInspector]);
+  private val log: Logger = LoggerFactory.getLogger(classOf[ScriptInspector])
   lazy val client: Client = getInjector.getInstance(classOf[Client])
   lazy val overlayManager: OverlayManager = getInjector.getInstance(classOf[OverlayManager])
   lazy val clientThread: ClientThread = getInjector.getInstance(classOf[ClientThread])
@@ -32,21 +32,22 @@ class ScriptInspector() extends Plugin {
   override protected def startUp(): Unit = {
     log.debug("Script Inspector Startup")
 
-    subs = List(
-      eventBus.register(classOf[ScriptPreFired], onScriptPreFired, 0),
-      eventBus.register(classOf[ScriptPostFired], onScriptPostFired, 0),
-      eventBus.register(classOf[ScriptCallbackEvent], onScriptCallback, 0)
-    )
+//    subs = List(
+//      eventBus.register(classOf[ScriptPreFired], onScriptPreFired, 0),
+//      eventBus.register(classOf[ScriptPostFired], onScriptPostFired, 0),
+//      eventBus.register(classOf[ScriptCallbackEvent], onScriptCallback, 0)
+//    )
   }
 
   override protected def shutDown(): Unit = {
-    subs.foreach(eventBus.unregister)
-    subs = Seq.empty
+//    subs.foreach(eventBus.unregister)
+//    subs = Seq.empty
     log.debug("Script Inspector Shutdown")
   }
 
   case class ScriptEventData(op: Int, opbase: String, source: Widget, mouse: (Int, Int), key: (Int, Char), args: List[AnyRef])
   case class ScriptPreFiredData(scriptId: Int, data: Option[ScriptEventData])
+  @Subscribe
   private def onScriptPreFired(event: ScriptPreFired): Unit = {
     val converted = ScriptPreFiredData(event.getScriptId,
         Option.apply(event.getScriptEvent).map(p => {
@@ -57,10 +58,13 @@ class ScriptInspector() extends Plugin {
     else log.debug("{}", converted)
   }
 
+  @Subscribe
   private def onScriptPostFired(event: ScriptPostFired): Unit = {
     log.debug("{}", event)
   }
 
+
+  @Subscribe
   private def onScriptCallback(event: ScriptCallbackEvent): Unit = {
     log.debug("{}", event)
   }

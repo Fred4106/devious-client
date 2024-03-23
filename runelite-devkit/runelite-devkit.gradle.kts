@@ -25,57 +25,51 @@
 
 description = "RuneLite Devkit"
 plugins {
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     application
     scala
 }
 
 repositories {
-//    exclusiveContent {
-//        forRepository {
-            maven {
-                url = uri("https://repo.runelite.net")
-            }
-//        }
-//        filter {
-//            includeGroup("net.runelite")
-//            includeGroup("net.runelite.gluegen")
-//            includeGroup("net.runelite.jocl")
-////            includeModule("net.runelite", "flatlaf")
-////            includeModule("net.runelite", "flatlaf-extras")
-//        }
-//    }
+    maven {
+        url = uri("https://repo.runelite.net")
+    }
     mavenCentral()
     mavenLocal()
 }
 
 val scalaMajorVersion = '3'
 val scalaVersion = "$scalaMajorVersion.4.0"
+application {
+    mainClass.set("net.runelite.devkit.Launcher")
+}
 dependencies {
     annotationProcessor(group = "org.projectlombok", name = "lombok", version = ProjectVersions.lombokVersion)
     compileOnly(group = "org.projectlombok", name = "lombok", version = ProjectVersions.lombokVersion)
     implementation("org.scala-lang", "scala3-library_"+scalaMajorVersion, ""+scalaVersion)
-    implementation("net.codingwell:scala-guice_3:7.0.0")
 
+    implementation(group = "com.google.inject", name = "guice", version = "5.0.1")
     implementation(group = "org.slf4j", name = "slf4j-api", version = "1.7.32")
     implementation(group = "org.pf4j", name = "pf4j", version = "3.6.0") {
         exclude(group = "org.slf4j")
     }
     implementation(group = "org.pf4j", name = "pf4j-update", version = "2.3.0")
-
 //    implementation(group = "net.runelite", name = "rlawt", version = "1.4")
-//    implementation(group = "net.runelite", name = "flatlaf", version = ProjectVersions.flatLafVersion)
-//    implementation(group = "net.runelite", name = "flatlaf-extras", version = ProjectVersions.flatLafVersion)
+//    implementation(group = "com.google.code.gson", name = "gson", version = "2.8.5")
+//    implementation(group = "org.apache.commons", name = "commons-text", version = "1.9")
+//
+//    implementation(platform("org.lwjgl:lwjgl-bom:3.3.2"))
+//    implementation(group = "org.lwjgl", name = "lwjgl")
+//    implementation(group = "org.lwjgl", name = "lwjgl-opengl")
+//    implementation(group = "org.lwjgl", name = "lwjgl-opencl")
 
-//    api(group = "javax.annotation", name = "javax.annotation-api", version = "1.3.2")
-    api(project(":runelite-api"))
-//    implementation(group = "net.runelite.gluegen", name = "gluegen-rt", version = "2.4.0-rc-20220318")
-//    implementation(group = "net.runelite.jocl", name = "jocl", version = "1.0")
-//    implementation(group = "net.runelite", name = "discord", version = "1.4")
+    implementation(project(":runelite-api"))
+    implementation(project(":cache"))
+    implementation(project(":http-api"))
+
     implementation(project(":runelite-client"))
-
-//    api(project(":cache"))
-//    api(project(":deobfuscator"))
 }
+
 
 tasks {
     named<JavaExec>("run") {
@@ -85,4 +79,16 @@ tasks {
         args(listOf("--cached-uuid", "--cached-random-dat", "--debug", "--developer-mode"))
         mainClass.set("net.runelite.devkit.Launcher")
     }
+
+    jar {
+        manifest {
+            attributes(mutableMapOf("Main-Class" to "net.runelite.devkit.Launcher"))
+        }
+    }
+
+
+    shadowJar {
+        archiveClassifier.set("shaded")
+    }
+
 }
