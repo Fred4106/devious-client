@@ -24,6 +24,7 @@
  */
 package net.runelite.api;
 
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
@@ -63,5 +64,9 @@ public abstract class Query<EntityType, QueryType, QR extends QueryResults>
 			return other;
 		}
 		return predicate.and(other);
+	}
+
+	public boolean test(EntityType e) {
+		return Optional.ofNullable(predicate).map(x -> x.test(e)).orElse(true);
 	}
 }
