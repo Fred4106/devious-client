@@ -198,10 +198,15 @@ public class ReflectUtil
 
 		// JDK11 shares the annotation map between the object and its root, so clear both;
 		// JDK8 just has the annotations on object.
-		Field rootField = object.getClass().getDeclaredField("root");
-		rootField.setAccessible(true);
+		try
+		{
+			Field rootField = object.getClass().getDeclaredField("root");
+			rootField.setAccessible(true);
+			uncacheAnnotations(rootField.get(object), declaredAnnotationsClazz);
+		}
+		catch (Exception e) {
 
-		final Object root = rootField.get(object);
-		uncacheAnnotations(root, declaredAnnotationsClazz);
+		}
+
 	}
 }
