@@ -204,8 +204,8 @@ public class ReflectUtil
 			rootField.setAccessible(true);
 			uncacheAnnotations(rootField.get(object), declaredAnnotationsClazz);
 		}
-		catch (Exception e) {
-
+		catch (Exception e)
+		{
 		}
 
 	}
